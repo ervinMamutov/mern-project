@@ -1,12 +1,16 @@
+import Goal from '../models/goal.js';
+
 const goalControllers = {
   // @desc Get goal
   // @route Get /api/goal
   // @access Private
   getGoal: async (req, res) => {
     try {
+      const goals = await Goal.find();
+
       res.status(200).json({
         success: true,
-        message: 'Get goal'
+        goals
       });
     } catch (err) {
       return res.status(400).json({
@@ -20,6 +24,17 @@ const goalControllers = {
   // @access Private
   addGoal: async (req, res) => {
     try {
+      const { text } = req.body;
+      if (!text) {
+        return res.status(401).json({
+          success: false,
+          message: 'Please entered your goal'
+        });
+      }
+
+      const goal = await Goal.create({
+        text: text
+      });
       res.status(200).json({
         success: true,
         message: 'Set goal'
@@ -37,6 +52,23 @@ const goalControllers = {
   updateGoal: async (req, res) => {
     try {
       const { id } = req.params;
+      const { text } = req.body;
+
+      const goal = await Goal.findById(id);
+
+      if (!goal) {
+        return res.status(400).json({
+          success: false,
+          message: 'Goal not found'
+        });
+      }
+
+      const updatedGoal = await Goal.findByIdAndUpdate(
+        { _id: id },
+        { text },
+        { new: true }
+      );
+
       res.status(200).json({
         success: true,
         message: `Update goal ${id}`
@@ -54,6 +86,7 @@ const goalControllers = {
   deleteGoal: async (req, res) => {
     try {
       const { id } = req.params;
+      const deleteGaol = await Goal.findByIdAndDelete({ _id: id });
       res.status(200).json({
         success: true,
         message: `Delete goal ${id}`

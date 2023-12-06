@@ -1,4 +1,5 @@
 import Goal from '../models/goal.js';
+import User from '../models/user.js';
 
 const goalControllers = {
   // @desc Get goal
@@ -6,7 +7,7 @@ const goalControllers = {
   // @access Private
   getGoal: async (req, res) => {
     try {
-      const goals = await Goal.find();
+      const goals = await Goal.find({ user: req.user.id });
 
       res.status(200).json({
         success: true,
@@ -33,11 +34,13 @@ const goalControllers = {
       }
 
       const goal = await Goal.create({
-        text: text
+        text: text,
+        user: req.user.id
       });
       res.status(200).json({
         success: true,
-        message: 'Set goal'
+        message: 'Set goal',
+        goal
       });
     } catch (err) {
       return res.status(400).json({
@@ -60,6 +63,20 @@ const goalControllers = {
         return res.status(400).json({
           success: false,
           message: 'Goal not found'
+        });
+      }
+
+      if (!req.user) {
+        return res.status(400).json({
+          success: false,
+          message: 'User not found'
+        });
+      }
+
+      if (goal.user.toString() !== req.user.body) {
+        return res.status(400).json({
+          success: false,
+          message: 'User not authorization'
         });
       }
 
@@ -86,7 +103,31 @@ const goalControllers = {
   deleteGoal: async (req, res) => {
     try {
       const { id } = req.params;
-      const deleteGaol = await Goal.findByIdAndDelete({ _id: id });
+
+      const deleteGaol = await Goal.findById({ _id: id });
+
+      if (!deleteGaol) {
+        return res.status(400).json({
+          success: false,
+          message: 'Goal not found'
+        });
+      }
+      if (!req.user) {
+        return res.status(400).json({
+          success: false,
+          message: 'User not found'
+        });
+      }
+
+      if (!deleteGaol.toString() !== req.user.id) {
+        return res.status(400).json({
+          success: false,
+          message: 'User not found'
+        });
+      }
+
+      await deleteGaol.remove();
+
       res.status(200).json({
         success: true,
         message: `Delete goal ${id}`
